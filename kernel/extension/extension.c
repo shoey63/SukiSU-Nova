@@ -18,22 +18,17 @@
 #include <linux/string.h>
 #include <linux/types.h>
 
-#include "extension.h"
-#include "kpm.h"
-#include "cpu_spoof.h"
-#include "umount_paths.h"
-#include "dynamic_manager.h"
-#include "susfs_extension.h"
-#include "version_spoof.h"
-#include "klog.h" // IWYU pragma: keep
-
 static const struct ksu_extension_handler *extension_handlers[KSU_EXTENSION_MAX];
 
 static DEFINE_MUTEX(extension_mutex);
 
 static const char *const extension_names[KSU_EXTENSION_MAX] = {
+#ifdef KSU_CAN_USE_KPM
     [KSU_EXTENSION_KPM] = "kpm",
+#endif
+#ifdef KSU_CAN_USE_CPU_SPOOF
     [KSU_EXTENSION_CPU_SPOOF] = "cpu_spoof",
+#endif
     [KSU_EXTENSION_UMOUNT_PATHS] = "umount_paths",
     [KSU_EXTENSION_DYNAMIC_MANAGER] = "dynamic_manager",
     [KSU_EXTENSION_SUSFS] = "susfs",
@@ -43,13 +38,13 @@ static const char *const extension_names[KSU_EXTENSION_MAX] = {
 /*
  * Force-extension bitmap (parallel to policy/feature.c).
  * Each set bit in forced_mask means "userspace cannot change this
- * extension anymore"; the saved value lives in forced_values[id] and
+ * extension anymore"; the saved value lives in extension_forced_values[id] and
  * is replayed on every boot through either ops->set (value-flavored)
  * or handler->apply_forced (io-flavored). forced_pending is the
  * replay backlog: bits stay set until ksu_extension_apply_forced()
  * successfully replays them.
  */
-static u64 forced_values[KSU_EXTENSION_MAX];
+static u64 extension_forced_values[KSU_EXTENSION_MAX];
 static DECLARE_BITMAP(forced_mask, KSU_EXTENSION_MAX);
 static DECLARE_BITMAP(forced_pending, KSU_EXTENSION_MAX);
 
@@ -127,7 +122,7 @@ static int force_extension_param_set(const char *val,
             continue;
         }
 
-        forced_values[id] = value;
+        extension_forced_values[id] = value;
         set_bit(id, forced_mask);
         set_bit(id, forced_pending);
         pr_info("extension: %s (id=%u) forced to %llu\n",
@@ -138,8 +133,12 @@ static int force_extension_param_set(const char *val,
 
 static const struct kernel_param_ops force_extension_param_ops = {
     /* A bare `force_extension` would otherwise fail parse_args() and
-     * the whole module load: keep it no-arg-friendly. */
+     * the whole module load: keep it no-arg-friendly.
+     * KERNEL_PARAM_OPS_FL_NOARG (and the ops->flags member) only exists
+     * since 3.18, so old trees must not see the designator at all. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
     .flags = KERNEL_PARAM_OPS_FL_NOARG,
+#endif
     .set = force_extension_param_set,
 };
 module_param_cb(force_extension, &force_extension_param_ops, NULL, 0);
@@ -459,14 +458,14 @@ void ksu_extension_apply_forced(void)
              * later it must be replayed explicitly.
              */
             pr_warn("extension: force_extension=%s=%llu pending: handler not registered\n",
-                    extension_names[id], forced_values[id]);
+                    extension_names[id], extension_forced_values[id]);
             clear_bit(id, forced_pending);
             continue;
         }
 
         /* Dispatch order is fixed:
          *   1. ops->set      — value-flavoured handlers, replay the
-         *                       raw u64 forced_values[id].
+         *                       raw u64 extension_forced_values[id].
          *   2. apply_forced  — io-flavoured handlers, kernel-side
          *                       callback that receives the raw u64.
          *                       No user pointer is fabricated.
@@ -476,25 +475,25 @@ void ksu_extension_apply_forced(void)
          *                       umount_paths, EFAULT for others)
          *                       and is no longer used here. */
         if (handler->ops && handler->ops->set) {
-            ret = handler->ops->set(id, forced_values[id]);
+            ret = handler->ops->set(id, extension_forced_values[id]);
         } else if (handler->apply_forced) {
-            handler->apply_forced(id, forced_values[id]);
+            handler->apply_forced(id, extension_forced_values[id]);
             ret = 0;
         } else {
             pr_warn("extension: force_extension=%s=%llu ignored: handler has no apply_forced and no ops->set\n",
-                    extension_names[id], forced_values[id]);
+                    extension_names[id], extension_forced_values[id]);
             clear_bit(id, forced_pending);
             continue;
         }
 
         if (ret) {
             pr_warn("extension: apply forced %s=%llu failed: %d\n",
-                    extension_names[id], forced_values[id], ret);
+                    extension_names[id], extension_forced_values[id], ret);
             continue;
         }
         clear_bit(id, forced_pending);
         pr_info("extension: applied forced %s=%llu\n", extension_names[id],
-                forced_values[id]);
+                extension_forced_values[id]);
     }
 
     mutex_unlock(&extension_mutex);
@@ -519,10 +518,16 @@ void __init ksu_extension_init(void)
  */
 void __init ksu_extension_register_all(void)
 {
+    /*
+     * KPM and CPU spoof are only built on 5.10+; on older kernels their
+     * headers and unity-included sources are not compiled at all, so no
+     * handler exists and userspace sees them as unsupported.
+     */
+#ifdef KSU_CAN_USE_KPM
     /* KPM exposes .get (so KSU_EXTENSION_GET reports CONFIG_KPM)
      * but no .set. Forced-by-config is applied through
      * ksu_extension_kpm_apply_forced, a kernel-side callback that
-     * receives the raw forced_values[id] u64 and never a userspace
+     * receives the raw extension_forced_values[id] u64 and never a userspace
      * pointer. The userspace ioctl entry point (ksu_extension_kpm_io)
      * sees only real user addresses and forwards them to do_kpm(). */
     static const struct ksu_extension_handler kpm_handler = {
@@ -534,6 +539,8 @@ void __init ksu_extension_register_all(void)
         .io_handler = ksu_extension_kpm_io,
         .apply_forced = ksu_extension_kpm_apply_forced,
     };
+#endif /* KSU_CAN_USE_KPM */
+#ifdef KSU_CAN_USE_CPU_SPOOF
     static const struct ksu_extension_handler cpu_spoof_handler = {
         .extension_id = KSU_EXTENSION_CPU_SPOOF,
         .name = "cpu_spoof",
@@ -542,6 +549,7 @@ void __init ksu_extension_register_all(void)
         .ops = NULL,
         .io_handler = ksu_extension_cpu_spoof_io,
     };
+#endif /* KSU_CAN_USE_CPU_SPOOF */
     static const struct ksu_extension_handler umount_paths_handler = {
         .extension_id = KSU_EXTENSION_UMOUNT_PATHS,
         .name = "umount_paths",
@@ -583,10 +591,14 @@ void __init ksu_extension_register_all(void)
         .wipe = ksu_extension_version_spoof_wipe,
     };
 
+#ifdef KSU_CAN_USE_KPM
     if (ksu_register_extension_handler(&kpm_handler))
         pr_err("extension: failed to register kpm\n");
+#endif
+#ifdef KSU_CAN_USE_CPU_SPOOF
     if (ksu_register_extension_handler(&cpu_spoof_handler))
         pr_err("extension: failed to register cpu_spoof\n");
+#endif
     if (ksu_register_extension_handler(&umount_paths_handler))
         pr_err("extension: failed to register umount_paths\n");
     if (ksu_register_extension_handler(&dynamic_manager_handler))
@@ -599,8 +611,8 @@ void __init ksu_extension_register_all(void)
     /* Publish: any future ksu_extension_apply_forced() is now safe.
      * The release-store pairs with the acquire-load in
      * ksu_extension_apply_forced() so that, on the calling CPU,
-     * the four ksu_register_extension_handler() writes above are
-     * visible before the flag is observed as set. */
+     * the handler registration writes above are visible before the
+     * flag is observed as set. */
     smp_wmb();
     WRITE_ONCE(extensions_registered, true);
 }

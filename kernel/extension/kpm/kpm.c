@@ -10,8 +10,8 @@
 #ifdef CONFIG_ARM64
 #include <asm/ptrace.h>
 #endif
-#include "infra/symbol_resolver.h"
 #include "kpm.h"
+#include "compact.h"
 #include "bridge.h"
 
 #define KPM_NAME_LEN 32
@@ -118,10 +118,6 @@ static int handle_kpm(const struct ksu_kpm_cmd *cmd)
     if (cmd->control_code == SUKISU_KPM_NUM)
         return sukisu_kpm_bridge(SUKISU_KPM_NUM, 0, 0, 0, 0);
 
-    /* Host identity: a plain status query with no user pointers. */
-    if (cmd->control_code == SUKISU_KPM_HOST)
-        return sukisu_kpm_bridge(SUKISU_KPM_HOST, 0, 0, 0, 0);
-
     if (cmd->control_code == SUKISU_KPM_LOAD_EVENT)
         return handle_kpm_load_event(cmd);
 
@@ -187,3 +183,7 @@ int do_kpm(void __user *arg)
     result = handle_kpm(&cmd);
     return copy_to_user(u64_to_user_ptr(cmd.result_code), &result, sizeof(result)) ? -EFAULT : 0;
 }
+
+/* The top-level extension.c registers the KPM extension handler; this
+ * file only implements the underlying KPM control surface. */
+

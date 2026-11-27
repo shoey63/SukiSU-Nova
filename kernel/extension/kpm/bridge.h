@@ -8,8 +8,6 @@
  * LOAD(path,args,user_reserved), UNLOAD(name,user_reserved), NUM(),
  * LIST(kernel_buf,size), INFO(name,kernel_buf,size),
  * CONTROL(name,args,user_output,size), VERSION(kernel_buf,size).
- * Op 9 reports the host identity (SUKISU_KPM_HOST, defined in
- * uapi/extension.h) as BOOT_IMAGE or MODULE.
  */
 /* Public framing tags: ALL must match. These are not authentication. */
 #define SUKISU_KPM_SUPERCALL_MAGIC 0x53554b504d000002UL

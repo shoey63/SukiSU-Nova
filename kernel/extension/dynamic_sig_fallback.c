@@ -6,8 +6,7 @@
  * second chance: re-scan /data/app and crown *any* APK signed with the
  * canonical built-in KernelSU signature, regardless of its package name.
  * It is reached through the ksu_sig_fallback static key (see
- * dynamic_sig_fallback.h) rather than a weak symbol, so the call site is
- * an indirect branch with a real default target and an uninstalled
+ * dynamic_sig_fallback.h) rather than a weak symbol, so an uninstalled
  * fallback can never deref NULL.
  *
  * The scanner is deliberately self-contained: its own dir_context, its own
@@ -32,13 +31,6 @@
 #include <linux/types.h>
 #include <linux/version.h>
 
-#include "klog.h" // IWYU pragma: keep
-#include "util.h"
-#include "uapi/app_profile.h"
-#include "manager/apk_sign.h"
-#include "manager/manager_identity.h"
-#include "dynamic_sig_fallback.h"
-
 #define DATA_PATH_LEN 384 // 384 is enough for /data/app/<package>/base.apk
 
 #define SIG_FALLBACK_ROOT "/data/app"
@@ -57,6 +49,17 @@
 #define FILLDIR_ACTOR_STOP -EINVAL
 #endif
 
+/*
+ * The actor's first parameter became struct dir_context * in 3.19; older
+ * kernels hand the context over as an opaque void *. Mirrors
+ * MY_ACTOR_CTX_ARG in manager/throne_tracker.c.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#define FB_ACTOR_CTX_ARG struct dir_context *ctx
+#else
+#define FB_ACTOR_CTX_ARG void *ctx_void
+#endif
+
 struct fb_path {
     char dirpath[DATA_PATH_LEN];
     int depth;
@@ -71,9 +74,12 @@ struct fb_dir_ctx {
     bool matched;
 };
 
-static FILLDIR_RETURN_TYPE fb_actor(struct dir_context *ctx, const char *name, int namelen, loff_t off, u64 ino,
+static FILLDIR_RETURN_TYPE fb_actor(FB_ACTOR_CTX_ARG, const char *name, int namelen, loff_t off, u64 ino,
                                     unsigned int d_type)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+    struct dir_context *ctx = (struct dir_context *)ctx_void;
+#endif
     struct fb_dir_ctx *c = container_of(ctx, struct fb_dir_ctx, ctx);
     char dirpath[DATA_PATH_LEN];
 
@@ -210,7 +216,11 @@ static bool fb_crown_by_signature(struct list_head *uid_data)
     return crowned;
 }
 
+#ifdef KSU_COMPAT_USE_STATIC_KEY
 DEFINE_STATIC_KEY_FALSE(ksu_sig_fallback_key);
+#else
+bool ksu_sig_fallback_enabled __read_mostly = false;
+#endif
 
 ksu_sig_fallback_fn ksu_sig_fallback_current;
 
@@ -226,10 +236,10 @@ int ksu_sig_fallback_register(ksu_sig_fallback_fn fn)
         return 0;
 
     if (was_enabled)
-        static_branch_disable(&ksu_sig_fallback_key);
+        KSU_SIG_FALLBACK_DISABLE();
 
     WRITE_ONCE(ksu_sig_fallback_current, fn);
-    static_branch_enable(&ksu_sig_fallback_key);
+    KSU_SIG_FALLBACK_ENABLE();
     pr_info("sig_fallback: registered %px\n", (void *)fn);
     return 0;
 }
@@ -239,7 +249,7 @@ void ksu_sig_fallback_unregister(void)
     if (!READ_ONCE(ksu_sig_fallback_current))
         return;
 
-    static_branch_disable(&ksu_sig_fallback_key);
+    KSU_SIG_FALLBACK_DISABLE();
     WRITE_ONCE(ksu_sig_fallback_current, NULL);
     pr_info("sig_fallback: unregistered, fallback disabled\n");
 }
