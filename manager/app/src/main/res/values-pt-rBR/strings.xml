@@ -744,7 +744,7 @@
     <string name="susfs_reset_loop_paths_title">Redefinir caminhos Loop</string>
     <string name="susfs_reset_loop_paths_message">Tem certeza de que deseja limpar todos os caminhos SUS Loop? Esta ação não pode ser desfeita</string>
     <string name="susfs_loop_path_label">Caminho Loop</string>
-    <string name="susfs_loop_path_restriction_warning">Observação: apenas caminhos que NÃO estejam dentro de /storage/ e /sdcard/ podem ser adicionados como caminhos Loop</string>
+    <string name="susfs_loop_path_restriction_warning">Observação: caminhos em /sdcard e /storage/emulated agora são suportados (necessários para dados de apps em FUSE); volumes removíveis em /storage/XXXX-XXXX continuam bloqueados</string>
     <string name="susfs_invalid_loop_path">Caminho Loop inválido</string>
     <string name="susfs_add_loop_path_failed">Falha ao adicionar o caminho Loop</string>
     <string name="susfs_edit_loop_path_failed">Falha ao editar o caminho Loop</string>

@@ -791,7 +791,7 @@
     <string name="susfs_reset_loop_paths_title">Reset Loop Paths</string>
     <string name="susfs_reset_loop_paths_message">Are you sure you want to clear all SUS loop paths? This action cannot be undone</string>
     <string name="susfs_loop_path_label">Loop Path</string>
-    <string name="susfs_loop_path_restriction_warning">Note: Only paths NOT inside /storage/ and /sdcard/ can be added via loop paths</string>
+    <string name="susfs_loop_path_restriction_warning">Note: /sdcard and /storage/emulated paths are supported (needed for FUSE app data); removable volumes under /storage/XXXX-XXXX are still rejected</string>
     <string name="susfs_invalid_loop_path">Invalid loop path</string>
     <string name="susfs_add_loop_path_failed">Failed to add loop path</string>
     <string name="susfs_edit_loop_path_failed">Failed to edit loop path</string>

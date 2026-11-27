@@ -587,7 +587,7 @@
     <string name="susfs_reset_loop_paths_title">重置循環路徑</string>
     <string name="susfs_reset_loop_paths_message">確定要清空所有 SuS 循環路徑嗎？此操作無法撤銷。</string>
     <string name="susfs_loop_path_label">循環路徑</string>
-    <string name="susfs_loop_path_restriction_warning">注意：只有不在 /storage/ 和 /sdcard/ 內的路徑才能通過循環路徑添加。</string>
+    <string name="susfs_loop_path_restriction_warning">注意：現在支援 /sdcard 與 /storage/emulated 路徑（用於 FUSE 應用程式資料）；/storage/XXXX-XXXX 這類可移除儲存路徑仍會被拒絕。</string>
     <string name="susfs_invalid_loop_path">無效的循環路徑</string>
     <string name="susfs_add_loop_path_failed">添加循環路徑失敗</string>
     <string name="susfs_edit_loop_path_failed">編輯循環路徑失敗</string>

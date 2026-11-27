@@ -18,6 +18,21 @@ fn builtin_zygisk_step(step: &str, action: impl FnOnce() -> Result<()>) {
     }
 }
 
+/// Re-render the SuSFS auto-start module from the saved config when it is
+/// enabled. Called before any stage script runs so a ksud upgrade or a config
+/// change made through the CLI takes effect on this boot instead of waiting
+/// for the manager to reinstall the module.
+pub fn refresh_susfs_auto_start_module() {
+    #[cfg(target_arch = "aarch64")]
+    if crate::susfs_config::get(crate::susfs_config::keys::KEY_AUTO_START_ENABLED)
+        .is_ok_and(|value| value == "true")
+        && crate::susfs_module::is_module_installed()
+        && let Err(e) = crate::susfs_module::install_module()
+    {
+        warn!("refresh SuSFS auto-start module failed: {e}");
+    }
+}
+
 pub fn on_post_fs_data() -> Result<()> {
     if let Err(e) = ksucalls::ensure_uapi_version_matched() {
         error!("{e:#}, skip on_post_fs_data");
@@ -139,6 +154,10 @@ pub fn on_post_fs_data() -> Result<()> {
     if let Err(e) = metamodule::exec_stage_script("post-fs-data", wait) {
         warn!("exec metamodule post-fs-data script failed: {e}");
     }
+
+    // Refresh the auto-start module from the current config before its own
+    // post-fs-data.sh runs.
+    refresh_susfs_auto_start_module();
 
     // exec modules post-fs-data scripts
     if let Err(e) = crate::module::exec_stage_script("post-fs-data", wait) {

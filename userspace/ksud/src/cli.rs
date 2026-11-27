@@ -1607,142 +1607,131 @@ pub fn run() -> Result<()> {
             }
         }
         #[cfg(target_arch = "aarch64")]
-        Commands::Susfs { command } => {
-            let _ = match command {
-                Susfs::Status => {
-                    println!("{}", susfs::get_susfs_status());
-                    Ok(())
-                }
-                Susfs::Version => {
-                    println!("{}", susfs::get_susfs_version());
-                    Ok(())
-                }
-                Susfs::Variant => {
-                    println!("{}", susfs::get_susfs_variant());
-                    Ok(())
-                }
-                Susfs::Implementation => {
-                    println!("{}", susfs::get_susfs_implementation());
-                    Ok(())
-                }
-                Susfs::Features => {
-                    println!("{}", susfs::get_susfs_features());
-                    Ok(())
-                }
-                Susfs::SetUname { release, version } => susfs::set_uname(&release, &version),
-                Susfs::EnableLog { enabled } => susfs::enable_log(enabled != 0),
-                Susfs::EnableAvcLogSpoofing { enabled } => {
-                    susfs::enable_avc_log_spoofing(enabled != 0)
-                }
-                Susfs::SetCmdlineOrBootconfig { path } => susfs::set_cmdline_or_bootconfig(&path),
-                Susfs::HideSusMntsForNonSuProcs { enabled } => {
-                    susfs::hide_sus_mnts_for_non_su_procs(enabled != 0)
-                }
-                Susfs::AddOpenRedirect {
-                    target,
-                    redirected,
-                    uid_scheme,
-                } => susfs::add_open_redirect(&target, &redirected, uid_scheme),
-                Susfs::SetPriorityUidFilter { packages } => {
-                    susfs::set_priority_uid_filter(&packages)
-                }
-                Susfs::SetSusPathUidFilter { packages } => {
-                    susfs::set_sus_path_uid_filter(&packages)
-                }
-                Susfs::AddSusMap { path } => susfs::add_sus_map(&path),
-                Susfs::AddSusPath { path } => susfs::add_sus_path(&path),
-                Susfs::AddSusPathLoop { path } => susfs::add_sus_path_loop(&path),
-                Susfs::AddSusKstat { path } => susfs::add_sus_kstat(&path),
-                Susfs::UpdateSusKstat { path } => susfs::update_sus_kstat(&path),
-                Susfs::UpdateSusKstatFullClone { path } => {
-                    susfs::update_sus_kstat_full_clone(&path)
-                }
-                Susfs::AddSusKstatStatically {
-                    path,
-                    ino,
-                    dev,
-                    nlink,
-                    size,
-                    atime_sec,
-                    atime_nsec,
-                    mtime_sec,
-                    mtime_nsec,
-                    ctime_sec,
-                    ctime_nsec,
-                    blocks,
-                    blksize,
-                } => susfs::add_sus_kstat_statically(
-                    &path,
-                    &ino,
-                    &dev,
-                    &nlink,
-                    &size,
-                    &atime_sec,
-                    &atime_nsec,
-                    &mtime_sec,
-                    &mtime_nsec,
-                    &ctime_sec,
-                    &ctime_nsec,
-                    &blocks,
-                    &blksize,
-                ),
-                Susfs::Module { command } => {
-                    use crate::susfs_module;
-                    match command {
-                        SusfsModuleCmd::Install => {
-                            susfs_module::install_module()?;
-                            println!("SuSFS module installed successfully");
-                        }
-                        SusfsModuleCmd::Remove => {
-                            susfs_module::remove_module()?;
-                            println!("SuSFS module removed successfully");
-                        }
-                        SusfsModuleCmd::Status => {
-                            if susfs_module::is_module_installed() {
-                                println!("installed");
-                            } else {
-                                println!("not installed");
-                            }
+        Commands::Susfs { command } => match command {
+            Susfs::Status => {
+                println!("{}", susfs::get_susfs_status());
+                Ok(())
+            }
+            Susfs::Version => {
+                println!("{}", susfs::get_susfs_version());
+                Ok(())
+            }
+            Susfs::Variant => {
+                println!("{}", susfs::get_susfs_variant());
+                Ok(())
+            }
+            Susfs::Implementation => {
+                println!("{}", susfs::get_susfs_implementation());
+                Ok(())
+            }
+            Susfs::Features => {
+                println!("{}", susfs::get_susfs_features());
+                Ok(())
+            }
+            Susfs::SetUname { release, version } => susfs::set_uname(&release, &version),
+            Susfs::EnableLog { enabled } => susfs::enable_log(enabled != 0),
+            Susfs::EnableAvcLogSpoofing { enabled } => susfs::enable_avc_log_spoofing(enabled != 0),
+            Susfs::SetCmdlineOrBootconfig { path } => susfs::set_cmdline_or_bootconfig(&path),
+            Susfs::HideSusMntsForNonSuProcs { enabled } => {
+                susfs::hide_sus_mnts_for_non_su_procs(enabled != 0)
+            }
+            Susfs::AddOpenRedirect {
+                target,
+                redirected,
+                uid_scheme,
+            } => susfs::add_open_redirect(&target, &redirected, uid_scheme),
+            Susfs::SetPriorityUidFilter { packages } => susfs::set_priority_uid_filter(&packages),
+            Susfs::SetSusPathUidFilter { packages } => susfs::set_sus_path_uid_filter(&packages),
+            Susfs::AddSusMap { path } => susfs::add_sus_map(&path),
+            Susfs::AddSusPath { path } => susfs::add_sus_path(&path),
+            Susfs::AddSusPathLoop { path } => susfs::add_sus_path_loop(&path),
+            Susfs::AddSusKstat { path } => susfs::add_sus_kstat(&path),
+            Susfs::UpdateSusKstat { path } => susfs::update_sus_kstat(&path),
+            Susfs::UpdateSusKstatFullClone { path } => susfs::update_sus_kstat_full_clone(&path),
+            Susfs::AddSusKstatStatically {
+                path,
+                ino,
+                dev,
+                nlink,
+                size,
+                atime_sec,
+                atime_nsec,
+                mtime_sec,
+                mtime_nsec,
+                ctime_sec,
+                ctime_nsec,
+                blocks,
+                blksize,
+            } => susfs::add_sus_kstat_statically(
+                &path,
+                &ino,
+                &dev,
+                &nlink,
+                &size,
+                &atime_sec,
+                &atime_nsec,
+                &mtime_sec,
+                &mtime_nsec,
+                &ctime_sec,
+                &ctime_nsec,
+                &blocks,
+                &blksize,
+            ),
+            Susfs::Module { command } => {
+                use crate::susfs_module;
+                match command {
+                    SusfsModuleCmd::Install => {
+                        susfs_module::install_module()?;
+                        println!("SuSFS module installed successfully");
+                    }
+                    SusfsModuleCmd::Remove => {
+                        susfs_module::remove_module()?;
+                        println!("SuSFS module removed successfully");
+                    }
+                    SusfsModuleCmd::Status => {
+                        if susfs_module::is_module_installed() {
+                            println!("installed");
+                        } else {
+                            println!("not installed");
                         }
                     }
-                    Ok(())
                 }
-                Susfs::Config { command } => {
-                    use crate::susfs_config;
-                    match command {
-                        SusfsConfigCmd::Get { key } => {
-                            println!("{}", susfs_config::get(&key)?);
-                        }
-                        SusfsConfigCmd::Set { key, value } => {
-                            susfs_config::set(&key, &value)?;
-                            println!("ok");
-                        }
-                        SusfsConfigCmd::Remove { key } => {
-                            susfs_config::remove(&key)?;
-                            println!("ok");
-                        }
-                        SusfsConfigCmd::Clear => {
-                            susfs_config::clear()?;
-                            println!("ok");
-                        }
-                        SusfsConfigCmd::Reset => {
-                            susfs_config::reset_to_defaults()?;
-                            println!("ok");
-                        }
-                        SusfsConfigCmd::List { json } => {
-                            let output = if json {
-                                serde_json::to_string(&susfs_config::store::load_config()?)?
-                            } else {
-                                susfs_config::export_json()?
-                            };
-                            println!("{output}");
-                        }
+                Ok(())
+            }
+            Susfs::Config { command } => {
+                use crate::susfs_config;
+                match command {
+                    SusfsConfigCmd::Get { key } => {
+                        println!("{}", susfs_config::get(&key)?);
                     }
-                    Ok(())
+                    SusfsConfigCmd::Set { key, value } => {
+                        susfs_config::set(&key, &value)?;
+                        println!("ok");
+                    }
+                    SusfsConfigCmd::Remove { key } => {
+                        susfs_config::remove(&key)?;
+                        println!("ok");
+                    }
+                    SusfsConfigCmd::Clear => {
+                        susfs_config::clear()?;
+                        println!("ok");
+                    }
+                    SusfsConfigCmd::Reset => {
+                        susfs_config::reset_to_defaults()?;
+                        println!("ok");
+                    }
+                    SusfsConfigCmd::List { json } => {
+                        let output = if json {
+                            serde_json::to_string(&susfs_config::store::load_config()?)?
+                        } else {
+                            susfs_config::export_json()?
+                        };
+                        println!("{output}");
+                    }
                 }
-            };
-            Ok(())
-        }
+                Ok(())
+            }
+        },
     };
 
     if let Err(e) = &result {

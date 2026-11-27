@@ -787,7 +787,7 @@
     <string name="susfs_reset_loop_paths_title">重置循环路径</string>
     <string name="susfs_reset_loop_paths_message">确定要清空所有 SuS 循环路径吗？此操作无法撤销。</string>
     <string name="susfs_loop_path_label">循环路径</string>
-    <string name="susfs_loop_path_restriction_warning">注意：只有不在 /storage/ 和 /sdcard/ 内的路径才能通过循环路径添加。</string>
+    <string name="susfs_loop_path_restriction_warning">注意：现在支持 /sdcard 与 /storage/emulated 路径（用于 FUSE 应用数据）；/storage/XXXX-XXXX 这类可移动存储路径仍会被拒绝。</string>
     <string name="susfs_invalid_loop_path">无效的循环路径</string>
     <string name="susfs_add_loop_path_failed">添加循环路径失败</string>
     <string name="susfs_edit_loop_path_failed">编辑循环路径失败</string>

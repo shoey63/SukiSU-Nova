@@ -123,6 +123,10 @@ pub fn run(
         warn!("prune modules failed: {e}");
     }
 
+    // Re-render the SuSFS auto-start module before the service/boot-completed
+    // stages run so the scripts match this ksud version and the saved config.
+    init_event::refresh_susfs_auto_start_module();
+
     if let Err(e) = restorecon::restorecon() {
         warn!("restorecon failed: {e}");
     }
