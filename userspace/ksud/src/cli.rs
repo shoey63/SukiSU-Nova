@@ -788,6 +788,8 @@ mod kpm_cmd {
         Control { name: String, args: String },
         /// Print KPM Loader version
         Version,
+        /// Print which KPM host is active: boot, module, none or unknown
+        Host,
     }
 }
 
@@ -1601,6 +1603,7 @@ pub fn run() -> Result<()> {
                     Ok(())
                 }
                 Kpm::Version => crate::kpm::version(),
+                Kpm::Host => crate::kpm::host(),
             }
         }
         #[cfg(target_arch = "aarch64")]

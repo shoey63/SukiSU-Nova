@@ -74,7 +74,7 @@ class KpmRepositoryImpl : KpmRepository {
                 description = "",
                 args = "",
                 enabled = true,
-                hasAction = true
+                hasAction = false
             )
         }
 
@@ -102,7 +102,9 @@ class KpmRepositoryImpl : KpmRepository {
             description = properties["description"] ?: "",
             args = properties["args"] ?: "",
             enabled = true,
-            hasAction = true
+            // The manager's Execute button drives ctl0.  Modules with only init
+            // (or only ctl1) have no action this UI can invoke, so hide it.
+            hasAction = properties["ctl0"] == "1"
         )
     }
 }

@@ -66,9 +66,18 @@ jobs:
       CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
       CNB_ARTIFACT_REPO: ${{ vars.CNB_ARTIFACT_REPO || 'sukisu-nova/artifacts' }}
       CNB_ARTIFACT_TOKEN: ${{ secrets.CNB_ARTIFACT_TOKEN || secrets.CNB_RAW_TOKEN || secrets.CNB_TOKEN }}
-      # downloadKpmTools fetches the KPM tools from the instance's release
-      # assets; the instance requires auth, so the task attaches this header.
-      KPM_TOOLS_TOKEN: ${{ secrets.CHECKOUT_TOKEN || vars.CHECKOUT_TOKEN || secrets.GITHUB_TOKEN }}
+      # The KPM tools live in a different repository (SukiSU_KernelPatch_patch)
+      # than the one this job builds. Forgejo's built-in GITHUB_TOKEN is an
+      # Actions task token bound to *this* repository: for any other one the API
+      # answers 404, not 403 (permissions.RepoAccess calls ctx.NotFound when
+      # task.RepoID differs), which surfaced as "HTTP 404 for .../releases".
+      # Never fall back to it here. The release assets are public, so an empty
+      # value is the normal case; set CHECKOUT_TOKEN only if that repository
+      # goes private again.
+      KPM_TOOLS_TOKEN: ${{ secrets.CHECKOUT_TOKEN || vars.CHECKOUT_TOKEN }}
+      # Same knob as build-kpm-lkm.yml: empty falls back to the rolling
+      # kpm-ci release inside downloadKpmTools/bundleKpmModules.
+      KPM_RELEASE_TAG: ${{ vars.KPM_RELEASE_TAG }}
 
     steps:
 
@@ -259,9 +268,9 @@ jobs:
 
       - name: Build with Gradle
         env:
-          # The kpm tools are release assets of the mirrored KernelPatch repo;
-          # raw.githubusercontent.com is not reachable from this network.
-          KPM_TOOLS_BASE_URL: https://git.zako.shirkneko.top:20004/shirkneko/SukiSU_KernelPatch_patch/releases/download/0.14.0
+          # downloadKpmTools and bundleKpmModules resolve the newest release
+          # themselves; KPM_TOOLS_TOKEN is unset here because the assets are
+          # public and a token for another repository only breaks the fetch.
           PR_BUILD_FLAG: ${{ inputs.keystore != '' && '1' || '' }}
         run: |
           set -eux
@@ -272,14 +281,6 @@ jobs:
           # No `clean`: every job starts from a fresh checkout, so build/ is empty
           # anyway and cleaning only threw away what --build-cache could reuse.
           # The cache lives in GRADLE_USER_HOME (/ci/tools/gradle), which persists.
-          kpm=app/build/generated/kpmTools
-          if [ ! -s "$kpm/assets/kpm/kpimg" ] || [ ! -s "$kpm/jniLibs/arm64-v8a/libkptools.so" ]; then
-            # downloadKpmTools would fetch these from raw.githubusercontent.com;
-            # the image already carries them, so only seed when missing.
-            mkdir -p "$kpm/jniLibs/arm64-v8a" "$kpm/assets/kpm"
-            cp -f /opt/kpm-tools/kptools-android "$kpm/jniLibs/arm64-v8a/libkptools.so"
-            cp -f /opt/kpm-tools/kpimg "$kpm/assets/kpm/kpimg"
-          fi
           gradle --build-cache -Dorg.gradle.parallel=true \
             assembleRelease ${PR_BUILD_FLAG:+-PIS_PR_BUILD=true}
 

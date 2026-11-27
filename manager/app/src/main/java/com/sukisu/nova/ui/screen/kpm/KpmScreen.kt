@@ -217,19 +217,47 @@ private suspend fun handleModuleUninstall(
     try {
         val result = withContext(Dispatchers.IO) {
             require(isSafeKpmModuleId(moduleId))
-            check(unloadKpmModule(moduleId)) { context.getString(R.string.config_command_rejected) }
+            var unloadError: Throwable? = null
+            try {
+                unloadKpmModule(moduleId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                unloadError = e
+            }
             // ksud can exit successfully even when the kernel rejects unloading.
-            // Confirm removal before deleting the boot-time copy.
+            // Never keep the boot copy when the live unload failed: otherwise it
+            // would be loaded again on the next boot.
             val loaded = probeKpmModule(moduleId)
-            check(loaded == false) { context.getString(R.string.config_command_rejected) }
             val removal = getRootShell().newJob().add(
                 "rm -f -- ${SuSFSConfig.shellQuote("/data/adb/kpm/$moduleId.kpm")}"
             ).to(ArrayList(), ArrayList()).exec()
-            ConfigResult(moduleId, if (removal.isSuccess) false else null,
-                ConfigRuntimeStatus.APPLIED,
-                if (removal.isSuccess) null else removal.err.joinToString("\n").ifBlank {
-                    context.getString(R.string.config_exit_code, removal.code)
-                })
+            val removed = removal.isSuccess
+            val removalError = removal.err.joinToString("\n").ifBlank {
+                context.getString(R.string.config_exit_code, removal.code)
+            }
+            when {
+                !removed -> ConfigResult(
+                    moduleId,
+                    null,
+                    ConfigRuntimeStatus.FAILED,
+                    removalError,
+                )
+
+                loaded != false -> ConfigResult(
+                    moduleId,
+                    false,
+                    ConfigRuntimeStatus.APPLIED,
+                    context.getString(R.string.kpm_uninstall_file_removed_reboot),
+                )
+
+                else -> ConfigResult(
+                    moduleId,
+                    false,
+                    ConfigRuntimeStatus.APPLIED,
+                    unloadError?.localizedMessage?.takeIf { it.isNotBlank() },
+                )
+            }
         }
         viewModel.setOperationResult(result)
         showToast(result.description(context))

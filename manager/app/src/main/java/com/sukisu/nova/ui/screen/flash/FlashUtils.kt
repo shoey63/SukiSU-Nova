@@ -37,6 +37,8 @@ import com.sukisu.nova.ksuApp
 import com.sukisu.nova.ui.navigation3.deleteExternalZipCache
 import com.sukisu.nova.ui.util.flashModule
 import com.sukisu.nova.ui.util.installBoot
+import com.sukisu.nova.ui.util.installKpmKernelModule
+import com.sukisu.nova.ui.util.removeKpmKernelModule
 import com.sukisu.nova.ui.util.patchKpmBoot
 import com.sukisu.nova.ui.util.restoreBoot
 import com.sukisu.nova.ui.util.uninstallPermanently
@@ -108,6 +110,15 @@ sealed class FlashIt : Parcelable {
 
     @Parcelize
     data class PatchKpmBoot(val boot: Uri? = null, val undo: Boolean = false) : FlashIt()
+
+    @Parcelize
+    data class InstallKpmModule(
+        val module: Uri? = null,
+        val persist: Boolean = true,
+    ) : FlashIt()
+
+    @Parcelize
+    data object RemoveKpmModule : FlashIt()
 
     @Parcelize
     data class FlashModules(
@@ -195,6 +206,9 @@ fun flashIt(
         }
 
         is FlashIt.PatchKpmBoot -> patchKpmBoot(flashIt.boot, onStdout, onStderr, undo = flashIt.undo)
+        is FlashIt.InstallKpmModule ->
+            installKpmKernelModule(flashIt.module, flashIt.persist, onStdout, onStderr)
+        FlashIt.RemoveKpmModule -> removeKpmKernelModule(onStdout, onStderr)
         FlashIt.FlashRestore -> restoreBoot(onStdout, onStderr)
         FlashIt.FlashUninstall -> uninstallPermanently(onStdout, onStderr)
     }

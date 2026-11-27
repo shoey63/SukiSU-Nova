@@ -395,7 +395,8 @@
     <string name="kpm_embed_description">立即載入並儲存，開機時自動載入。請僅安裝可信任的模組。</string>
     <string name="invalid_file_type">文件類型不正確！請選擇 .kpm 文件</string>
     <string name="confirm_uninstall_title_with_filename">卸載</string>
-    <string name="confirm_uninstall_content">以下 KPM 將被卸載：%s</string>
+    <string name="confirm_uninstall_content">確定移除 %s？即使目前核心無法卸載，也會刪除 /data/adb/kpm 中的啟動副本；本次開機可能仍會保持載入，重新啟動後徹底移除。</string>
+    <string name="kpm_uninstall_file_removed_reboot">已刪除 /data/adb/kpm 中的啟動副本；本次開機仍會保持載入，重新啟動後徹底移除。</string>
     <string name="cancel">取消</string>
     <!-- Tools -->
     <string name="settings_tools">工具</string>
@@ -1074,6 +1075,16 @@
     <string name="install_kpm_clear">恢復自動選取</string>
     <string name="install_kpm_operation">KPM 選項</string>
     <string name="install_kpm_summary">保留、套用或復原核心中的 KPM 修補。</string>
+    <string name="install_kpm_kernel_module">安裝為核心模組</string>
+    <string name="install_kpm_kernel_module_summary">立即載入；之後每次開機由 ksud 自動載入。</string>
+    <string name="install_kpm_module_actions_summary">測試載入：僅本次開機生效。\n移除載入：無論目前是否載入 KPM，都會強制刪除 /data/adb/kpm 下所有 .ko 與 .kpm 啟動副本；若即時卸載失敗，重新啟動後徹底移除。</string>
+    <string name="install_kpm_test_load">測試載入</string>
+    <string name="install_kpm_remove_load">移除載入</string>
+    <string name="install_kpm_module_bundled">內建：%1$s</string>
+    <string name="install_kpm_module_bundled_missing">無內建 kpm.ko，請選擇 .ko 檔案</string>
+    <string name="install_kpm_module_custom">選擇 kpm.ko</string>
+    <string name="install_kpm_module_clear">清除自訂 .ko</string>
+    <string name="install_kpm_module_unavailable">無內建 kpm.ko，請先選擇 .ko 檔案。</string>
     <string name="install_kpm_inactive_unsupported">附加 KPM 暫僅支援直接安裝到目前槽位；安裝到非使用中槽位前請關閉附加 KPM。</string>
     <string name="spoof_cpu_core_little">%1$s · 小核心</string>
     <string name="spoof_cpu_core_middle">%1$s · 中核心</string>

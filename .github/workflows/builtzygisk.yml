@@ -3,11 +3,12 @@ name: Build BuiltZygisk
 # Builds the NyaZygisk payload that ksud embeds as its built-in Zygisk.
 #
 # The sources are the external/BuiltZygisk submodule, which itself has four
-# submodules on github.com. All five repositories are mirrored on this instance
-# and the URLs are rewritten below, because a job container cannot reach
-# github.com. Everything the build needs (SDK 37, NDK 27.2, CMake 4.1.2,
-# cargo-ndk) is baked into the sukisu-ci image; zygiskd's crates are prewarmed
-# into the host's /ci/tools/cargo by scripts/host/seed-cargo-cache.sh.
+# submodules on github.com. Job containers reach github.com again, so all five
+# come straight from the repositories .gitmodules names; the per-repository pin
+# mirrors on this instance are not needed. Everything the build needs (SDK 37,
+# NDK 27.2, CMake 4.1.2, cargo-ndk) is baked into the sukisu-ci image; zygiskd's
+# crates are prewarmed into the host's /ci/tools/cargo by
+# scripts/host/seed-cargo-cache.sh.
 on:
   workflow_dispatch:
   workflow_call:
@@ -58,7 +59,6 @@ jobs:
           TOKEN: ${{ secrets.CHECKOUT_TOKEN || vars.CHECKOUT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -eux
-          base="https://git.zako.shirkneko.top:20004/shirkneko"
           site="https://git.zako.shirkneko.top:20004"
 
           # The mirror repositories require the same auth as the main one, and
@@ -83,9 +83,6 @@ jobs:
 
           cd external/BuiltZygisk
           # Not --recursive: LSPlt carries a docs-only submodule we never build.
-          git submodule set-url loader/src/external/lsplt "$base/LSPlt.git"
-          git submodule set-url loader/src/external/dobby "$base/Dobby.git"
-          git submodule set-url loader/src/external/rv64hook "$base/riscv64-inline-hook.git"
           git submodule set-url loader/src/external/yukiplt "${site}/NkBe/YukiPLT.git"
           git submodule sync
           git submodule update --init

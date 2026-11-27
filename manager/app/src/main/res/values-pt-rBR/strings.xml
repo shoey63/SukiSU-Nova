@@ -566,7 +566,8 @@
     <string name="kpm_embed_description">Carregar agora e salvar para carregamento automático na inicialização. Instale apenas módulos em que você confia.</string>
     <string name="invalid_file_type">Tipo de arquivo incorreto! Selecione um arquivo .kpm</string>
     <string name="confirm_uninstall_title_with_filename">Desinstalar</string>
-    <string name="confirm_uninstall_content">O seguinte KPM será desinstalado: %s</string>
+    <string name="confirm_uninstall_content">Remover %s? A cópia de inicialização em /data/adb/kpm será excluída mesmo que o kernel em execução não consiga descarregar o módulo; a inicialização atual pode mantê-lo até reiniciar.</string>
+    <string name="kpm_uninstall_file_removed_reboot">Cópia de inicialização excluída de /data/adb/kpm; o módulo ainda está carregado nesta inicialização e desaparecerá após reiniciar.</string>
     <string name="cancel">Cancelar</string>
     <string name="settings_tools">Ferramentas</string>
     <string name="settings_tools_summary">Mais recursos avançados.</string>

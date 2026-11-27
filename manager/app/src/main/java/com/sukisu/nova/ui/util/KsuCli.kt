@@ -1224,6 +1224,38 @@ fun getKpmVersion(): String {
     return result.trim()
 }
 
+/** Which host is currently serving the KPM ABI. */
+enum class KpmHost {
+    /** kpimg is embedded in the boot kernel: the boot image has the KPM patch. */
+    BootImage,
+
+    /** A separately loaded kpm.ko serves KPM; the boot image has no KPM patch. */
+    Module,
+
+    /** No KPM host is reachable. */
+    None,
+
+    /** A host cannot report its identity, or the probe failed. */
+    Unknown,
+}
+
+suspend fun getKpmHost(): KpmHost = withContext(Dispatchers.IO) {
+    val result = getRootShell().newJob()
+        .add("${getKsuDaemonPath()} kpm host")
+        .to(ArrayList<String>(), null)
+        .exec()
+    if (!result.isSuccess) {
+        KpmHost.Unknown
+    } else {
+        when (result.out.lastOrNull { it.isNotBlank() }?.trim()) {
+            "boot" -> KpmHost.BootImage
+            "module" -> KpmHost.Module
+            "none" -> KpmHost.None
+            else -> KpmHost.Unknown
+        }
+    }
+}
+
 fun getSuSFSStatus(): String {
     val shell = getRootShell()
     return ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} susfs status").trim()

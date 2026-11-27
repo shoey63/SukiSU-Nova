@@ -182,6 +182,40 @@ pub fn version() -> Result<()> {
     Ok(())
 }
 
+/// Print which host currently serves the KPM ABI:
+///
+///   boot     kpimg embedded in the running boot image (KPM patch present)
+///   module   a separately loaded kpm.ko (boot image has no KPM patch)
+///   none     no KPM host is reachable
+///   unknown  a host answered but is too old to report its identity
+///
+/// Older hosts (and a missing host) both reject the identity op, so a
+/// negative reply falls back to VERSION to tell them apart. An ioctl-level
+/// failure is propagated: the caller must treat it as "cannot determine".
+pub fn host() -> Result<()> {
+    let host = kpm_io(ksu_uapi::SUKISU_KPM_HOST, 0, 0)?;
+
+    let name = if host == ksu_uapi::SUKISU_KPM_HOST_BOOT_IMAGE as i32 {
+        "boot"
+    } else if host == ksu_uapi::SUKISU_KPM_HOST_MODULE as i32 {
+        "module"
+    } else if host < 0 {
+        // Either no host is loaded, or the host predates this op. VERSION
+        // still answers when a (possibly older) host is serving KPM.
+        let mut buf = vec![0u8; KPM_TEXT_BUF_SIZE];
+        let ret = kpm_io(
+            ksu_uapi::SUKISU_KPM_VERSION,
+            buf.as_mut_ptr() as u64,
+            buf.len() as u64,
+        )?;
+        if ret >= 0 { "unknown" } else { "none" }
+    } else {
+        "unknown"
+    };
+    println!("{name}");
+    Ok(())
+}
+
 pub fn check_version() -> Result<String> {
     let binding = read_text(
         ksu_uapi::SUKISU_KPM_VERSION,
@@ -215,16 +249,50 @@ fn ensure_dir() -> Result<()> {
 }
 
 pub fn booted_load() -> Result<()> {
-    check_version()?;
-
     if crate::utils::is_safe_mode() {
         log::warn!("KPM: safe-mode – all modules won't load");
         return Ok(());
     }
 
     ensure_dir()?;
+    load_host_module()?;
+    check_version()?;
     load_all_modules()?;
 
+    Ok(())
+}
+
+/// Load the standalone host (`kpm-<kmi>.ko`) before any userspace `.kpm`
+/// module. The file is the persistence marker written by the manager; there
+/// is no post-fs-data.d shell hook.
+fn load_host_module() -> Result<()> {
+    if Path::new("/sys/module/kpm").exists() {
+        log::info!("KPM: host kpm.ko is already loaded");
+        return Ok(());
+    }
+
+    let kmi = crate::boot_patch::get_current_kmi()
+        .context("KPM: failed to detect the current KMI for the host kpm.ko")?;
+    let path = Path::new(KPM_DIR).join(format!("kpm-{kmi}.ko"));
+    if !path.is_file() {
+        log::debug!("KPM: no host kpm.ko at {}", path.display());
+        return Ok(());
+    }
+
+    log::info!("KPM: loading host kpm.ko {}", path.display());
+    #[cfg(target_os = "android")]
+    crate::debug::load_module(&path, &[])
+        .with_context(|| format!("KPM: failed to insmod host kpm.ko {}", path.display()))?;
+    #[cfg(not(target_os = "android"))]
+    bail!("KPM: host kpm.ko loading is only supported on Android");
+
+    if !Path::new("/sys/module/kpm").exists() {
+        bail!(
+            "KPM: {} loaded but /sys/module/kpm is still absent",
+            path.display()
+        );
+    }
+    log::info!("KPM: host kpm.ko loaded");
     Ok(())
 }
 

@@ -125,7 +125,7 @@ pub fn on_post_fs_data() -> Result<()> {
 
     #[cfg(target_arch = "aarch64")]
     if let Err(e) = kpm::booted_load() {
-        warn!("KPM: Failed to start KPM watcher: {e}");
+        warn!("KPM: boot load failed: {e}");
     }
 
     // A disabled built-in kept its files for the rest of the session so a running

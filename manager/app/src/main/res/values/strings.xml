@@ -550,6 +550,16 @@
     <string name="install_kpm_clear">Clear selection and use automatic boot</string>
     <string name="install_kpm_operation">KPM operation</string>
     <string name="install_kpm_summary">Keep, apply, or undo the kernel KPM patch.</string>
+    <string name="install_kpm_kernel_module">Install as kernel module</string>
+    <string name="install_kpm_kernel_module_summary">Load now; ksud reloads it each boot.</string>
+    <string name="install_kpm_module_actions_summary">Test load: this boot only.\nRemove load: always deletes every .ko and .kpm boot copy under /data/adb/kpm, even if no KPM module is loaded or live unloading fails; reboot if the module stays busy.</string>
+    <string name="install_kpm_test_load">Test load</string>
+    <string name="install_kpm_remove_load">Remove load</string>
+    <string name="install_kpm_module_bundled">Bundled: %1$s</string>
+    <string name="install_kpm_module_bundled_missing">No bundled kpm.ko; select a .ko</string>
+    <string name="install_kpm_module_custom">Select kpm.ko</string>
+    <string name="install_kpm_module_clear">Clear custom .ko</string>
+    <string name="install_kpm_module_unavailable">No bundled kpm.ko; select a .ko first.</string>
     <string name="install_kpm_inactive_unsupported">Additional KPM operations currently support direct installation to the current slot only. Disable KPM before installing to the inactive slot.</string>
     <string name="kernel_flashing">Kernel Flashing</string>
     <string name="horizon_kernel">AnyKernel3 Kernel</string>
@@ -583,7 +593,8 @@
     <string name="kpm_embed_description">Load now and save for automatic loading at startup. Only install modules you trust.</string>
     <string name="invalid_file_type">Incorrect file type! Please select .kpm file</string>
     <string name="confirm_uninstall_title_with_filename">Uninstall</string>
-    <string name="confirm_uninstall_content">The following KPM will be uninstalled: %s</string>
+    <string name="confirm_uninstall_content">Remove %s? Its boot copy under /data/adb/kpm will be deleted even if the running kernel cannot unload it; the current boot may keep the module until a reboot.</string>
+    <string name="kpm_uninstall_file_removed_reboot">Boot copy deleted from /data/adb/kpm; the module is still loaded in this boot and will be gone after a reboot.</string>
     <string name="cancel">Cancel</string>
     <!-- Tools -->
     <string name="settings_tools">Tools</string>

@@ -132,9 +132,11 @@ one, so a running job keeps the image it started with.
 
 ## Things this network cannot reach
 
-`github.com` and `raw.githubusercontent.com` resolve to `::1` here (the tunnel
-only proxies a fixed domain list), and `services.gradle.org` redirects to
-`github.com`. Nothing in the pipeline may depend on them:
+`services.gradle.org` redirects to `github.com`. `github.com` itself is
+reachable from a job container again — `builtzygisk.yml` clones BuiltZygisk and
+its four loader submodules straight from upstream, exactly as their
+`.gitmodules` name them — but the rest of the pipeline still avoids it on
+purpose, and a step that needs a long fetch from it is asking for trouble:
 
 - **Rust git dependencies** — eight crates come from git on `github.com`.
   `.github/image/mirror-git-deps.sh` mirrors them into `/srv/forgejo-ci/git-mirrors`
@@ -283,8 +285,9 @@ Renamed to `*.yml.disabled`; Forgejo and GitHub both ignore those names.
 - `ksud-extra.yml` builds with `cross`, installed from a pinned `github.com`
   commit, and needs a Docker socket inside the job container. Nothing calls it.
 
-`builtzygisk.yml` is *not* disabled: `external/BuiltZygisk` is mirrored onto this
-instance, and `ci.yml` / `release.yml` both call it.
+`builtzygisk.yml` is *not* disabled: `ci.yml` / `release.yml` both call it, and
+it clones `external/BuiltZygisk` plus its four loader submodules from their
+upstream repositories on github.com.
 
 ## Commit signing
 

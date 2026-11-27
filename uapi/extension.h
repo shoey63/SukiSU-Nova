@@ -185,6 +185,17 @@ static const __u32 SUKISU_KPM_CONTROL = 6;
 static const __u32 SUKISU_KPM_VERSION = 7;
 /* Optional event-aware load used for boot-stage modules. */
 static const __u32 SUKISU_KPM_LOAD_EVENT = 8;
+/*
+ * Reports which host currently serves the KPM ABI:
+ *   SUKISU_KPM_HOST_BOOT_IMAGE  kpimg embedded in the boot kernel
+ *                               (the boot image already carries the KPM patch)
+ *   SUKISU_KPM_HOST_MODULE      a separately insmod'ed kpm.ko
+ * Hosts older than this op answer -EOPNOTSUPP; callers must treat that as
+ * "cannot determine", not as "no host".
+ */
+static const __u32 SUKISU_KPM_HOST = 9;
+#define SUKISU_KPM_HOST_BOOT_IMAGE 1u
+#define SUKISU_KPM_HOST_MODULE     2u
 
 struct ksu_kpm_cmd {
     __aligned_u64 control_code;

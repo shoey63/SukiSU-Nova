@@ -118,6 +118,10 @@ static int handle_kpm(const struct ksu_kpm_cmd *cmd)
     if (cmd->control_code == SUKISU_KPM_NUM)
         return sukisu_kpm_bridge(SUKISU_KPM_NUM, 0, 0, 0, 0);
 
+    /* Host identity: a plain status query with no user pointers. */
+    if (cmd->control_code == SUKISU_KPM_HOST)
+        return sukisu_kpm_bridge(SUKISU_KPM_HOST, 0, 0, 0, 0);
+
     if (cmd->control_code == SUKISU_KPM_LOAD_EVENT)
         return handle_kpm_load_event(cmd);
 
